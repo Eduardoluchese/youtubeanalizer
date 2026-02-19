@@ -1,0 +1,1118 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Channel Analyzer PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a26;
+    --surface-3: #22222f;
+    --red: #ff2d55;
+    --red-glow: rgba(255, 45, 85, 0.3);
+    --cyan: #00e5ff;
+    --cyan-glow: rgba(0, 229, 255, 0.15);
+    --text: #e8e8ef;
+    --text-dim: #8888a0;
+    --border: #2a2a3a;
+    --green: #34d399;
+    --yellow: #fbbf24;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(255,45,85,0.06), transparent),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(0,229,255,0.04), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2.5rem 0 2rem;
+  }
+  .header h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--red), #ff6b8a, var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+  .header p {
+    color: var(--text-dim);
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+  }
+
+  /* INPUT PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--red), var(--cyan));
+    opacity: 0.7;
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  .input-grid .full { grid-column: 1 / -1; }
+
+  .field label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    resize: vertical;
+  }
+  .field input:focus, .field textarea:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px var(--red-glow);
+  }
+  .field input::placeholder, .field textarea::placeholder { color: #555568; }
+
+  /* Checkbox customizado */
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+  }
+  .checkbox-row input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    cursor: pointer;
+    accent-color: var(--cyan);
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+  .checkbox-row label.check-label {
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.82rem;
+    margin: 0;
+    cursor: pointer;
+    color: var(--cyan);
+  }
+
+  .btn-analyze {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--red), #e0264c);
+    color: white;
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    text-transform: uppercase;
+  }
+  .btn-analyze:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px var(--red-glow);
+  }
+  .btn-analyze:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* PROGRESS */
+  .progress-section { display: none; margin-bottom: 2rem; }
+  .progress-section.active { display: block; }
+  .progress-bar-container {
+    background: var(--surface-2);
+    border-radius: 8px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 0.8rem;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--cyan));
+    border-radius: 8px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  /* RESULTS */
+  .results { display: none; }
+  .results.active { display: block; }
+
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .results-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .btn-export {
+    padding: 0.6rem 1.4rem;
+    border: 1px solid var(--cyan);
+    background: transparent;
+    color: var(--cyan);
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-export:hover {
+    background: var(--cyan);
+    color: var(--bg);
+  }
+
+  /* VIDEO CARD */
+  .video-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .video-card:hover { border-color: #3a3a50; }
+
+  .video-card-header {
+    display: flex;
+    gap: 1.2rem;
+    padding: 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    align-items: flex-start;
+  }
+  .video-thumb {
+    width: 160px;
+    min-width: 160px;
+    aspect-ratio: 16/9;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--surface-2);
+  }
+  .video-info { flex: 1; min-width: 0; }
+  .video-channel {
+    font-size: 0.75rem;
+    color: var(--cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+  .video-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .video-stats {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+  .stat .icon { font-size: 0.9rem; }
+  .stat.views .val { color: var(--cyan); }
+  .stat.likes .val { color: var(--red); }
+  .stat.comments .val { color: var(--yellow); }
+
+  .chevron {
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    transition: transform 0.3s;
+    margin-top: 0.3rem;
+  }
+  .video-card.open .chevron { transform: rotate(180deg); }
+
+  .video-card-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .video-card.open .video-card-body {
+    max-height: 50000px;
+  }
+  .video-card-content {
+    padding: 0 1.5rem 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-tab-bar {
+    display: flex;
+    gap: 0;
+    margin: 1rem 0;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .section-tab {
+    flex: 1;
+    padding: 0.65rem 0.5rem;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s, color 0.2s;
+  }
+  .section-tab.active {
+    background: var(--red);
+    color: white;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .desc-box, .tags-box, .transcript-box, .comments-box {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 1.2rem;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: var(--text-dim);
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .tag-pill {
+    display: inline-block;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.78rem;
+    margin: 0.2rem;
+    color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .comment-item {
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .comment-item:last-child { border-bottom: none; }
+  .comment-author {
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+  .comment-text {
+    font-size: 0.84rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .comment-likes {
+    font-size: 0.75rem;
+    color: var(--red);
+    margin-top: 0.3rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .reply-indicator {
+    color: var(--cyan);
+    margin-right: 0.3rem;
+  }
+
+  .no-data {
+    color: #555568;
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 1rem 0;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a50; }
+
+  /* ERROR / LOG */
+  .log {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+  }
+  .log.active { display: block; }
+  .log .err { color: var(--red); }
+  .log .ok { color: var(--green); }
+  .log .info { color: var(--cyan); }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .header h1 { font-size: 1.8rem; }
+    .input-grid { grid-template-columns: 1fr; }
+    .video-card-header { flex-direction: column; }
+    .video-thumb { width: 100%; }
+    .section-tab { font-size: 0.68rem; padding: 0.55rem 0.3rem; }
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .video-card {
+    animation: fadeInUp 0.4s ease both;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>YouTube Analyzer PRO</h1>
+    <p>Extraia dados de múltiplos canais — com comentários completos e filtros inteligentes de visualizações</p>
+  </div>
+
+  <div class="panel">
+    <div class="input-grid">
+      <div class="field full">
+        <label>🔗 Links ou IDs dos Canais (Um por linha)</label>
+        <textarea id="channelInput" rows="3" placeholder="https://www.youtube.com/@canal1&#10;https://www.youtube.com/@canal2"></textarea>
+      </div>
+      <div class="field full">
+        <label>🔑 API Key do YouTube</label>
+        <input type="text" id="apiKeyInput" value="AIzaSyC6Ib-_HY6ieQ9AxzfepiewKJ8LHKIPyvI" placeholder="Cole sua API key aqui">
+      </div>
+      
+      <div class="field">
+        <label>📊 Nº de Vídeos por canal (0 = TODOS)</label>
+        <input type="number" id="videoCount" value="10" min="0" placeholder="0 para processar todos">
+        <div class="checkbox-row">
+          <input type="checkbox" id="fetchTopViews">
+          <label class="check-label" for="fetchTopViews">Buscar direto os Mais Vistos (em vez dos Recentes)</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>⏭️ Qtd. / Frequência de Transcrição</label>
+        <input type="number" id="transcriptSkip" value="1" min="0" placeholder="Ex: 1 = Todos, 2 = Metade...">
+        <div class="checkbox-row">
+          <input type="checkbox" id="topViewsOnly">
+          <label class="check-label" for="topViewsOnly">Transcrever apenas os Top X mais vistos da lista acima</label>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>📝 API Key da Supadata (Reserva para Transcrições - Opcional)</label>
+        <input type="password" id="supadataKeyInput" placeholder="Cole sua API key da Supadata aqui">
+        <div style="font-size: 0.7rem; color: #555568; margin-top: 0.4rem;">
+          Usada apenas se a extração direta falhar. (supadata.ai)
+        </div>
+      </div>
+    </div>
+    <button class="btn-analyze" id="btnAnalyze" onclick="startAnalysis()">
+      ▶ Iniciar Análise
+    </button>
+  </div>
+
+  <div class="progress-section" id="progressSection">
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">Preparando...</div>
+  </div>
+
+  <div class="log" id="logBox"></div>
+
+  <div class="results" id="resultsSection">
+    <div class="results-header">
+      <h2 id="resultsTitle">Resultados</h2>
+      <button class="btn-export" onclick="exportCSV()">⬇ Exportar Planilha (CSV)</button>
+    </div>
+    <div id="videoList"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'https://www.googleapis.com/youtube/v3';
+let allVideoData = [];
+
+function log(msg, type = '') {
+  const box = document.getElementById('logBox');
+  box.classList.add('active');
+  box.innerHTML += `<div class="${type}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+function setProgress(pct, text) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = text;
+}
+
+function extractChannelId(input) {
+  input = input.trim();
+  if (/^UC[\w-]{22}$/.test(input)) return { type: 'id', value: input };
+  let match;
+  match = input.match(/youtube\.com\/channel\/(UC[\w-]{22})/);
+  if (match) return { type: 'id', value: match[1] };
+  match = input.match(/youtube\.com\/@([\w.-]+)/);
+  if (match) return { type: 'handle', value: match[1] };
+  match = input.match(/youtube\.com\/c\/([\w.-]+)/);
+  if (match) return { type: 'username', value: match[1] };
+  match = input.match(/youtube\.com\/user\/([\w.-]+)/);
+  if (match) return { type: 'username', value: match[1] };
+  if (input.startsWith('@')) return { type: 'handle', value: input.slice(1) };
+  return { type: 'handle', value: input };
+}
+
+async function apiGet(endpoint, params) {
+  const API_KEY = document.getElementById('apiKeyInput').value.trim();
+  params.key = API_KEY;
+  const url = `${API_BASE}/${endpoint}?` + new URLSearchParams(params);
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function resolveChannelId(input) {
+  const parsed = extractChannelId(input);
+  if (parsed.type === 'id') return parsed.value;
+
+  const data = await apiGet('search', {
+    part: 'snippet',
+    q: parsed.type === 'handle' ? `@${parsed.value}` : parsed.value,
+    type: 'channel',
+    maxResults: 1
+  });
+  if (data.items && data.items.length > 0) {
+    return data.items[0].snippet.channelId;
+  }
+
+  try {
+    const data2 = await apiGet('channels', {
+      part: 'id',
+      forHandle: parsed.value
+    });
+    if (data2.items && data2.items.length > 0) return data2.items[0].id;
+  } catch(e) {}
+
+  throw new Error(`Canal "${input}" não encontrado.`);
+}
+
+async function getUploadsPlaylistId(channelId) {
+  const data = await apiGet('channels', {
+    part: 'contentDetails,snippet',
+    id: channelId
+  });
+  if (!data.items || data.items.length === 0) throw new Error('Detalhes do canal não encontrados.');
+  return {
+    playlistId: data.items[0].contentDetails.relatedPlaylists.uploads,
+    channelName: data.items[0].snippet.title
+  };
+}
+
+// Busca os Recentes (via Playlist)
+async function getVideoIds(playlistId, limit) {
+  let ids = [];
+  let nextPageToken = '';
+  while (limit === 0 || ids.length < limit) {
+    const max = limit === 0 ? 50 : Math.min(50, limit - ids.length);
+    const params = {
+      part: 'contentDetails',
+      playlistId: playlistId,
+      maxResults: max
+    };
+    if (nextPageToken) params.pageToken = nextPageToken;
+    const data = await apiGet('playlistItems', params);
+    
+    if (!data.items || data.items.length === 0) break;
+    
+    for (const item of data.items) {
+      ids.push(item.contentDetails.videoId);
+    }
+    nextPageToken = data.nextPageToken;
+    if (!nextPageToken) break;
+  }
+  return limit === 0 ? ids : ids.slice(0, limit);
+}
+
+// Busca os Mais Vistos (via Search)
+async function getTopVideoIdsSearch(channelId, limit) {
+  let ids = [];
+  let nextPageToken = '';
+  while (ids.length < limit) {
+    const max = Math.min(50, limit - ids.length);
+    const params = {
+      part: 'id',
+      channelId: channelId,
+      maxResults: max,
+      order: 'viewCount', // Pega do mais visto para o menos visto
+      type: 'video'
+    };
+    if (nextPageToken) params.pageToken = nextPageToken;
+    const data = await apiGet('search', params);
+    
+    if (!data.items || data.items.length === 0) break;
+    
+    for (const item of data.items) {
+      if (item.id && item.id.videoId) {
+        ids.push(item.id.videoId);
+      }
+    }
+    nextPageToken = data.nextPageToken;
+    if (!nextPageToken) break;
+  }
+  return ids;
+}
+
+async function getVideoDetails(videoIds) {
+  let all = [];
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const chunk = videoIds.slice(i, i + 50);
+    const data = await apiGet('videos', {
+      part: 'snippet,statistics',
+      id: chunk.join(',')
+    });
+    all.push(...data.items);
+  }
+  return all;
+}
+
+// Puxa Respostas aos comentários (threads)
+async function getComments(videoId, maxComments = 100) {
+  try {
+    const data = await apiGet('commentThreads', {
+      part: 'snippet,replies',
+      videoId: videoId,
+      maxResults: maxComments,
+      order: 'relevance',
+      textFormat: 'plainText'
+    });
+    
+    let allComments = [];
+    
+    for (const item of data.items || []) {
+      const top = item.snippet.topLevelComment.snippet;
+      allComments.push({
+        author: top.authorDisplayName,
+        text: top.textDisplay,
+        likes: top.likeCount,
+        date: top.publishedAt,
+        isReply: false
+      });
+      
+      if (item.replies && item.replies.comments) {
+        for (const reply of item.replies.comments) {
+          const repSnippet = reply.snippet;
+          allComments.push({
+            author: repSnippet.authorDisplayName,
+            text: repSnippet.textDisplay,
+            likes: repSnippet.likeCount,
+            date: repSnippet.publishedAt,
+            isReply: true
+          });
+        }
+      }
+    }
+    return allComments;
+  } catch (e) {
+    return [];
+  }
+}
+
+// ====== TRANSCRIPT SYSTEM ======
+async function getTranscript(videoId) {
+  // 1. MAESTRA.AI
+  try {
+    log(`  📝 Tentando Maestra.ai (Endpoint Cloud)...`, 'info');
+    const targetUrl = 'https://website-tools-dot-maestro-218920.uk.r.appspot.com/getYoutubeCaptions';
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+
+    const resMaestra = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoUrl: `https://www.youtube.com/watch?v=${videoId}` }),
+      signal: AbortSignal.timeout(20000)
+    });
+
+    if (resMaestra.ok) {
+      const data = await resMaestra.json();
+      const vttText = data.selectedCaptions;
+
+      if (vttText && typeof vttText === 'string') {
+        const lines = vttText.split('\n');
+        const cleanLines = new Set();
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine === '' || trimmedLine.startsWith('WEBVTT') || trimmedLine.startsWith('Kind:') || trimmedLine.startsWith('Language:') || trimmedLine.includes('-->')) continue;
+          if (trimmedLine.includes('<') || trimmedLine.includes('>')) continue;
+          cleanLines.add(trimmedLine);
+        }
+        const finalTranscript = [...cleanLines].join(' ');
+        if (finalTranscript.length > 10) {
+          log(`  ✓ Transcrição obtida via Maestra.ai!`, 'ok');
+          return finalTranscript;
+        }
+      }
+    }
+  } catch (e) {
+    log(`  ⚠ Maestra.ai demorou. Ativando plano alternativo...`, 'err');
+  }
+
+  // 2. PIPED API
+  try {
+    log(`  📝 Tentando Piped API (Servidor Público)...`, 'info');
+    const pipedUrl = `https://pipedapi.kavin.rocks/streams/${videoId}`;
+    const resPiped = await fetch(pipedUrl, { signal: AbortSignal.timeout(15000) });
+    
+    if (resPiped.ok) {
+      const data = await resPiped.json();
+      if (data.subtitles && data.subtitles.length > 0) {
+        let subTrack = data.subtitles.find(s => s.name.toLowerCase().includes('english') || s.name.toLowerCase().includes('en'));
+        if (!subTrack) subTrack = data.subtitles[0];
+
+        const subRes = await fetch(subTrack.url, { signal: AbortSignal.timeout(15000) });
+        if (subRes.ok) {
+          const subText = await subRes.text();
+          let cleanText = subText
+            .replace(/WEBVTT/gi, '')
+            .replace(/Kind: captions/gi, '')
+            .replace(/Language: .*/gi, '')
+            .replace(/Style:.*/gi, '')
+            .replace(/([\d]{2}:)?[\d]{2}:[\d]{2}\.[\d]{3}\s*-->\s*([\d]{2}:)?[\d]{2}:[\d]{2}\.[\d]{3}.*/g, '')
+            .replace(/<[^>]+>/g, '')
+            .replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          if (cleanText.length > 10) {
+            log(`  ✓ Transcrição limpa obtida via Piped`, 'ok');
+            return cleanText;
+          }
+        }
+      }
+    }
+  } catch (e) {
+     log(`  ⚠ Piped API falhou. Ativando Supadata...`, 'err');
+  }
+
+  // 3. SUPADATA
+  const supadataKey = (document.getElementById('supadataKeyInput')?.value || '').trim();
+  if (supadataKey) {
+    try {
+      log(`  📝 Tentando Supadata...`, 'info');
+      const urlSupa = `https://api.supadata.ai/v1/youtube/transcript?text=true&mode=auto&videoId=${videoId}`;
+      const resSupa = await fetch(urlSupa, { headers: { 'x-api-key': supadataKey }, signal: AbortSignal.timeout(15000) });
+      if (resSupa.ok) {
+        const dataSupa = await resSupa.json();
+        let transcriptSupa = dataSupa.content || '';
+        if (Array.isArray(transcriptSupa)) transcriptSupa = transcriptSupa.map(s => s.text).join(' ');
+        if (transcriptSupa.length > 10) {
+          log(`  ✓ Transcrição obtida via Supadata!`, 'ok');
+          return transcriptSupa.trim();
+        }
+      }
+    } catch (e) {
+      log(`  ❌ Erro na Supadata.`, 'err');
+    }
+  }
+
+  log(`  ❌ Nenhuma API conseguiu extrair a transcrição.`, 'err');
+  return '(Transcrição não disponível)';
+}
+
+function formatNumber(n) {
+  if (n === undefined || n === null) return '0';
+  n = parseInt(n);
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return n.toLocaleString('pt-BR');
+}
+
+function renderVideo(video, index) {
+  const v = video;
+  const tags = (v.tags || []).map(t => `<span class="tag-pill">${t}</span>`).join('');
+  const comments = v.comments.length > 0
+    ? v.comments.map(c => `
+      <div class="comment-item" style="${c.isReply ? 'margin-left: 2rem; border-left: 2px solid var(--border); padding-left: 1rem;' : ''}">
+        <div class="comment-author">${c.isReply ? '<span class="reply-indicator">↳</span>' : ''}${escapeHtml(c.author)}</div>
+        <div class="comment-text">${escapeHtml(c.text)}</div>
+        ${c.likes > 0 ? `<div class="comment-likes">♥ ${c.likes}</div>` : ''}
+      </div>`).join('')
+    : '<div class="no-data">Sem comentários disponíveis</div>';
+
+  return `
+  <div class="video-card" style="animation-delay: ${index * 0.06}s" id="card-${index}">
+    <div class="video-card-header" onclick="toggleCard(${index})">
+      <img class="video-thumb" src="${v.thumbnail}" alt="" loading="lazy">
+      <div class="video-info">
+        <div class="video-channel">${escapeHtml(v.channelName)}</div>
+        <div class="video-title">${escapeHtml(v.title)}</div>
+        <div class="video-stats">
+          <span class="stat views"><span class="icon">👁</span> <span class="val">${formatNumber(v.views)}</span></span>
+          <span class="stat likes"><span class="icon">♥</span> <span class="val">${formatNumber(v.likes)}</span></span>
+          <span class="stat comments"><span class="icon">💬</span> <span class="val">${formatNumber(v.commentCount)}</span></span>
+        </div>
+      </div>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="video-card-body">
+      <div class="video-card-content">
+        <div class="section-tab-bar">
+          <button class="section-tab active" onclick="switchTab(${index}, 'desc', this)">Descrição</button>
+          <button class="section-tab" onclick="switchTab(${index}, 'tags', this)">Tags</button>
+          <button class="section-tab" onclick="switchTab(${index}, 'comments', this)">Comentários</button>
+          <button class="section-tab" onclick="switchTab(${index}, 'transcript', this)">Transcrição</button>
+        </div>
+        <div class="tab-content active" id="tab-desc-${index}">
+          <div class="desc-box">${escapeHtml(v.description || '(Sem descrição)')}</div>
+        </div>
+        <div class="tab-content" id="tab-tags-${index}">
+          <div class="tags-box">${tags || '<span class="no-data">Sem tags</span>'}</div>
+        </div>
+        <div class="tab-content" id="tab-comments-${index}">
+          <div class="comments-box">${comments}</div>
+        </div>
+        <div class="tab-content" id="tab-transcript-${index}">
+          <div class="transcript-box">${escapeHtml(v.transcript)}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function toggleCard(index) {
+  document.getElementById(`card-${index}`).classList.toggle('open');
+}
+
+function switchTab(index, tab, btn) {
+  const card = document.getElementById(`card-${index}`);
+  card.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  card.querySelectorAll('.section-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${tab}-${index}`).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Exportação em formato de Planilha (CSV)
+function exportCSV() {
+  if (allVideoData.length === 0) return;
+
+  const headers = [
+    'Canal', 
+    'ID do Vídeo', 
+    'Título', 
+    'Data de Publicação', 
+    'Views', 
+    'Likes', 
+    'Qtd. Comentários (Métrica)', 
+    'URL do Vídeo', 
+    'Tags',
+    'Textos dos Comentários', 
+    'Descrição', 
+    'Transcrição'
+  ];
+
+  const escapeCSV = (str) => {
+    if (str === null || str === undefined) return '""';
+    const cleanStr = String(str).replace(/"/g, '""');
+    return `"${cleanStr}"`;
+  };
+
+  const rows = allVideoData.map(v => {
+    const formattedComments = v.comments.map(c => 
+      `${c.isReply ? '  ↳ ' : ''}${c.author}: ${c.text}`
+    ).join('\n\n');
+
+    return [
+      escapeCSV(v.channelName),
+      escapeCSV(v.id),
+      escapeCSV(v.title),
+      escapeCSV(v.publishedAt),
+      v.views || 0,
+      v.likes || 0,
+      v.commentCount || 0,
+      escapeCSV(`https://www.youtube.com/watch?v=${v.id}`),
+      escapeCSV((v.tags || []).join(', ')),
+      escapeCSV(formattedComments), 
+      escapeCSV(v.description),
+      escapeCSV(v.transcript)
+    ].join(',');
+  });
+
+  const csvContent = headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'youtube_multi_channel_analysis.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function startAnalysis() {
+  const rawChannels = document.getElementById('channelInput').value.trim().split('\n');
+  const channelsList = rawChannels.map(c => c.trim()).filter(c => c !== '');
+  
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const maxVideos = parseInt(document.getElementById('videoCount').value); 
+  const fetchTopViews = document.getElementById('fetchTopViews').checked; 
+  
+  const skipRate = parseInt(document.getElementById('transcriptSkip').value); 
+  const topViewsOnly = document.getElementById('topViewsOnly').checked; 
+
+  if (channelsList.length === 0) { alert('Insira pelo menos um link ou ID de canal.'); return; }
+  if (!apiKey) { alert('Insira sua API Key do YouTube.'); return; }
+
+  const btn = document.getElementById('btnAnalyze');
+  btn.disabled = true;
+  btn.textContent = '⏳ Analisando...';
+
+  const progressSection = document.getElementById('progressSection');
+  progressSection.classList.add('active');
+
+  const logBox = document.getElementById('logBox');
+  logBox.innerHTML = '';
+  logBox.classList.remove('active');
+
+  const resultsSection = document.getElementById('resultsSection');
+  resultsSection.classList.remove('active');
+  document.getElementById('videoList').innerHTML = '';
+  allVideoData = [];
+
+  try {
+    setProgress(5, 'Averiguando todos os canais fornecidos...');
+    log(`Iniciando análise para ${channelsList.length} canal(is)...`, 'info');
+
+    let allTargets = []; 
+
+    // FASE 1: Buscar IDs de vídeos
+    for (let c = 0; c < channelsList.length; c++) {
+      const inputChannel = channelsList[c];
+      try {
+        log(`Resolvendo canal: ${inputChannel}...`, 'info');
+        const channelId = await resolveChannelId(inputChannel);
+        
+        const { playlistId, channelName } = await getUploadsPlaylistId(channelId);
+        log(`Canal resolvido: ${channelName}`, 'ok');
+
+        let videoIds = [];
+        
+        if (fetchTopViews && maxVideos > 0) {
+          log(`-> Buscando os Top ${maxVideos} vídeos MAIS VISTOS do canal via API Search...`, 'info');
+          videoIds = await getTopVideoIdsSearch(channelId, maxVideos);
+        } else {
+          log(`-> Buscando os vídeos da playlist padrão...`, 'info');
+          videoIds = await getVideoIds(playlistId, isNaN(maxVideos) ? 10 : maxVideos);
+        }
+
+        log(`-> ${videoIds.length} vídeos encontrados para ${channelName}.`, 'ok');
+
+        videoIds.forEach(id => {
+          allTargets.push({ channelName: channelName, videoId: id });
+        });
+      } catch (err) {
+        log(`❌ Erro ao processar o canal "${inputChannel}": ${err.message}`, 'err');
+      }
+    }
+
+    if (allTargets.length === 0) {
+      throw new Error('Nenhum vídeo foi encontrado em nenhum dos canais.');
+    }
+
+    setProgress(20, `Carregando detalhes de ${allTargets.length} vídeos no total...`);
+    
+    // FASE 2: Processar detalhes
+    let processedCount = 0;
+    let renderIndex = 0;
+
+    const channelsGrouped = [...new Set(allTargets.map(t => t.channelName))];
+
+    for (let channelName of channelsGrouped) {
+      const channelVideos = allTargets.filter(t => t.channelName === channelName).map(t => t.videoId);
+      
+      let videoDetails = await getVideoDetails(channelVideos);
+
+      // Se usuário pediu para processar TODOS (0) e escolheu TOP views
+      if (fetchTopViews && maxVideos === 0) {
+         log(`🌟 Ordenando todos os vídeos do canal ${channelName} do mais visto para o menos visto...`, 'info');
+         videoDetails.sort((a, b) => parseInt(b.statistics?.viewCount || 0) - parseInt(a.statistics?.viewCount || 0));
+      }
+
+      // Separar os IDs dos TOP vídeos se a segunda caixa estiver marcada
+      let topViewedIds = [];
+      if (topViewsOnly && skipRate > 0) {
+        topViewedIds = [...videoDetails]
+          .sort((a, b) => parseInt(b.statistics?.viewCount || 0) - parseInt(a.statistics?.viewCount || 0))
+          .slice(0, skipRate)
+          .map(v => v.id);
+        log(`🌟 Identificados os Top ${topViewedIds.length} vídeos para TRANSCRIÇÃO.`, 'ok');
+      }
+
+      for (let i = 0; i < videoDetails.length; i++) {
+        const v = videoDetails[i];
+        processedCount++;
+        const pct = 20 + Math.round((processedCount / allTargets.length) * 80);
+        
+        setProgress(pct, `[${channelName}] Vídeo ${i + 1}/${videoDetails.length}...`);
+        log(`[${channelName}] Vídeo ${i+1}: ${v.snippet.title}`, 'info');
+
+        const comments = await getComments(v.id);
+        
+        let transcript = '';
+        let willTranscribe = false;
+
+        // Lógica das Caixas de Seleção
+        if (skipRate === 0) {
+           willTranscribe = false; // Pula todos
+        } else if (topViewsOnly) {
+           // Transcreve apenas se o vídeo estiver na lista dos mais vistos calculada acima
+           willTranscribe = topViewedIds.includes(v.id);
+        } else {
+           // Transcreve baseado no salto (Ex: se for 1, transcreve todos. Se for 2, transcreve 0, 2, 4...)
+           willTranscribe = (i % skipRate === 0);
+        }
+
+        if (willTranscribe) {
+           try {
+             transcript = await getTranscript(v.id);
+           } catch (e) {
+             transcript = '(Erro ao buscar transcrição)';
+           }
+        } else {
+           transcript = topViewsOnly 
+              ? `(Pulado - Não está no Top ${skipRate} de visualizações desta lista)` 
+              : `(Pulado - Configurado para transcrever a cada ${skipRate} vídeos)`;
+           log(`  ⏭ Transcrição pulada neste vídeo.`, 'info');
+        }
+
+        const videoData = {
+          id: v.id,
+          channelName: channelName,
+          title: v.snippet.title,
+          description: v.snippet.description,
+          thumbnail: v.snippet.thumbnails?.high?.url || v.snippet.thumbnails?.default?.url || '',
+          publishedAt: v.snippet.publishedAt,
+          tags: v.snippet.tags || [],
+          views: v.statistics.viewCount,
+          likes: v.statistics.likeCount,
+          commentCount: v.statistics.commentCount,
+          comments: comments,
+          transcript: transcript
+        };
+
+        allVideoData.push(videoData);
+        log(`  ✓ ${comments.length} comentários extraídos.`, 'ok');
+
+        document.getElementById('videoList').innerHTML += renderVideo(videoData, renderIndex);
+        renderIndex++;
+
+        if (processedCount < allTargets.length) await new Promise(r => setTimeout(r, 500));
+      }
+    }
+
+    setProgress(100, 'Análise completa!');
+    log(`✅ Análise finalizada — ${allVideoData.length} vídeos processados com sucesso.`, 'ok');
+
+    document.getElementById('resultsTitle').textContent = `Total processado: ${allVideoData.length} vídeos`;
+    resultsSection.classList.add('active');
+
+  } catch (err) {
+    log(`❌ Erro: ${err.message}`, 'err');
+    alert('Erro: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ Iniciar Análise';
+  }
+}
+</script>
+</body>
+</html>
